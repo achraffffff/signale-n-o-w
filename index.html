@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signalement Citoyen — Kénitra</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;}
+header{background:#0f172a;color:white;padding:13px 16px;display:flex;align-items:center;gap:10px;}
+header h2{font-size:15px;font-weight:500;flex:1;}
+.hbadge{background:#3b82f6;color:white;font-size:11px;padding:2px 9px;border-radius:20px;}
+.nav{display:flex;background:#1e293b;border-bottom:1px solid rgba(255,255,255,0.08);}
+.nav-btn{flex:1;padding:9px 4px;text-align:center;font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;border-bottom:2px solid transparent;}
+.nav-btn.active{color:white;border-bottom-color:#3b82f6;}
+.page{display:none;padding:12px;}
+.page.active{display:block;}
+.card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:13px;margin-bottom:11px;}
+.sec-title{font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+label{font-size:12px;color:#64748b;display:block;margin-top:9px;margin-bottom:3px;}
+input,textarea,select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#1e293b;font-size:13px;font-family:Arial,sans-serif;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#3b82f6;background:white;}
+textarea{height:65px;resize:none;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
+.cat-btn{padding:8px 6px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:11px;text-align:center;color:#64748b;transition:all .12s;line-height:1.4;}
+.cat-btn .ico{font-size:18px;display:block;margin-bottom:2px;}
+.cat-btn.sel{border-width:2px;border-color:#3b82f6;background:#eff6ff;color:#1d4ed8;}
+.urg-row{display:flex;gap:6px;margin-top:4px;}
+.urg-btn{flex:1;padding:8px 4px;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;font-size:11px;text-align:center;color:#64748b;}
+.urg-btn.u-faible{border-color:#10b981;background:#d1fae5;color:#065f46;}
+.urg-btn.u-moyen{border-color:#f59e0b;background:#fef3c7;color:#78350f;}
+.urg-btn.u-urgent{border-color:#ef4444;background:#fee2e2;color:#7f1d1d;}
+.photo-box{border:2px dashed #cbd5e1;border-radius:8px;padding:16px;text-align:center;cursor:pointer;margin-top:4px;background:#f8fafc;}
+.photo-box:hover{background:#eff6ff;border-color:#3b82f6;}
+.photo-box p{font-size:11px;color:#94a3b8;margin-top:4px;}
+#preview{width:100%;border-radius:8px;margin-top:8px;display:none;}
+#map-form{height:200px;border-radius:8px;margin-top:6px;}
+.coord-row{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;color:#64748b;}
+.dot{width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0;}
+.sbtn{width:100%;padding:12px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;}
+.sbtn:hover{background:#1d4ed8;}
+#map-main{height:360px;border-radius:12px;}
+.filter-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none;}
+.filter-chip{padding:5px 11px;border:1px solid #cbd5e1;border-radius:20px;font-size:11px;cursor:pointer;white-space:nowrap;background:#f8fafc;color:#64748b;}
+.filter-chip.on{background:#2563eb;border-color:#2563eb;color:white;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.stat-box{background:#f1f5f9;border-radius:8px;padding:12px;}
+.stat-num{font-size:24px;font-weight:700;color:#1e293b;}
+.stat-lbl{font-size:11px;color:#94a3b8;margin-top:2px;}
+.rec-card{background:white;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:9px;}
+.rec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.rec-type{font-size:13px;font-weight:600;}
+.upill{font-size:10px;padding:2px 8px;border-radius:20px;white-space:nowrap;font-weight:500;}
+.pf{background:#d1fae5;color:#065f46;}
+.pm{background:#fef3c7;color:#78350f;}
+.pu{background:#fee2e2;color:#7f1d1d;}
+.rec-loc{font-size:11px;color:#94a3b8;margin-top:3px;}
+.rec-desc{font-size:12px;color:#64748b;margin-top:5px;line-height:1.5;}
+.rec-img{width:100%;border-radius:8px;margin-top:8px;}
+.rec-foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.rec-user{font-size:10px;color:#94a3b8;}
+.status-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#e0e7ff;color:#3730a3;margin-top:2px;display:inline-block;}
+.vote-b{display:flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid #e2e8f0;border-radius:20px;background:#f8fafc;cursor:pointer;font-size:12px;color:#64748b;}
+.vote-b:hover{border-color:#3b82f6;color:#3b82f6;}
+.vote-b.vd{border-color:#3b82f6;color:#3b82f6;background:#eff6ff;}
+.notif-row{display:flex;gap:6px;margin-bottom:10px;}
+.notif-row input{flex:1;}
+.npub{padding:8px 14px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:500;}
+.nitem{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;margin-bottom:7px;font-size:12px;display:flex;gap:8px;align-items:flex-start;}
+.ni-ico{font-size:16px;flex-shrink:0;}
+.ni-txt{color:#374151;line-height:1.4;}
+.ni-date{font-size:10px;color:#94a3b8;margin-top:3px;}
+.empty{text-align:center;padding:24px 0;color:#94a3b8;font-size:13px;}
+.hint{font-size:10px;color:#94a3b8;margin-top:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <span style="font-size:20px;">🏙️</span>
+  <h2>Signalement — Kénitra</h2>
+  <span class="hbadge" id="totalBadge">0</span>
+</header>
+
+<div class="nav">
+  <div class="nav-btn active" onclick="goPage('p-form',this)">✏️ Signaler</div>
+  <div class="nav-btn" onclick="goPage('p-map',this)">🗺️ Carte</div>
+  <div class="nav-btn" onclick="goPage('p-list',this)">📋 Réclamations</div>
+  <div class="nav-btn" onclick="goPage('p-notif',this)">🔔 Alertes</div>
+</div>
+
+<!-- PAGE FORMULAIRE -->
+<div id="p-form" class="page active">
+
+  <div class="card">
+    <div class="sec-title">Identité du citoyen</div>
+    <div class="row2">
+      <div><label>Prénom *</label><input id="prenom" placeholder="Ahmed"></div>
+      <div><label>Nom *</label><input id="nom" placeholder="Benali"></div>
+    </div>
+    <div class="row2">
+      <div><label>CIN</label><input id="cin" placeholder="AB123456"></div>
+      <div><label>Téléphone</label><input id="tel" type="tel" placeholder="06…"></div>
+    </div>
+    <label>Email (facultatif)</label>
+    <input id="email" type="email" placeholder="exemple@gmail.com">
+    <label>Quartier / Rue</label>
+    <input id="quartier" placeholder="Ex: Hay Karima, Bd Mohammed V…">
+  </div>
+
+  <div class="card">
+    <div class="sec-title">Type de problème *</div>
+    <div class="cats" id="catBtns">
+      <div class="cat-btn" onclick="selCat(this,'Route / Nid de poule')"><span class="ico">🚧</span>Route / Chaussée</div>
+      <div class="cat-btn" onclick="selCat(this,'Éclairage défaillant')"><span class="ico">💡</span>Éclairage public</div>
+      <div class="cat-btn" onclick="selCat(this,'Feu rouge en panne')"><span class="ico">🚦</span>Feu rouge</div>
+      <div class="cat-btn" onclick="selCat(this,'Déchets / Dépôt sauvage')"><span class="ico">🗑️</span>Déchets / Dépôt</div>
+      <div class="cat-btn" onclick="selCat(this,'Fuite eau / Canalisation')"><span class="ico">💧</span>Eau / Canalisation</div>
+      <div class="cat-btn" onclick="selCat(this,'Arbre / Espaces verts')"><span class="ico">🌳</span>Espaces verts</div>
+      <div class="cat-btn" onclick="selCat(this,'Trottoir dégradé')"><span class="ico">🚶</span>Trottoir</div>
+      <div class="cat-btn" onclick="selCat(this,'Égout bouché')"><span class="ico">🕳️</span>Égout</div>
+      <div class="cat-btn" onclick="selCat(this,'Graffiti / Vandalisme')"><span class="ico">🖌️</span>Vandalisme</div>
+      <div class="cat-btn" onclick="selCat(this,'Nuisance sonore')"><span class="ico">📢</span>Nuisance sonore</div>
+      <div class="cat-btn" onclick="selCat(this,'Stationnement illégal')"><span class="ico">🚗</span>Stationnement</div>
+      <div class="cat-btn" onclick="selCat(this,'Autre problème')"><span class="ico">❓</span>Autre</div>
+    </div>
+    <label>Précision de l'emplacement</label>
+    <input id="precision" placeholder="Ex: devant l'école Ibn Sina, près du marché…">
+  </div>
+
+  <div class="card">
+    <div class="sec-title">Urgence et description *</div>
+    <label>Niveau d'urgence</label>
+    <div class="urg-row" id="urgBtns">
+      <div class="urg-btn" data-u="Faible" onclick="selUrg(this)">🟢 Faible</div>
+      <div class="urg-btn" data-u="Moyen" onclick="selUrg(this)">🟡 Moyen</div>
+      <div class="urg-btn" data-u="Urgent" onclick="selUrg(this)">🔴 Urgent</div>
+    </div>
+    <label>Description *</label>
+    <textarea id="desc" placeholder="Décrivez le problème en détail…"></textarea>
+  </div>
+
+  <div class="card">
+    <div class="sec-title">Photo du problème</div>
+    <label class="photo-box" for="photo">
+      <span style="font-size:26px;">📷</span>
+      <p id="photoLabel">Appuyez pour ajouter une photo</p>
+    </label>
+    <input type="file" id="photo" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+    <img id="preview" alt="Aperçu photo">
+  </div>
+
+  <div class="card">
+    <div class="sec-title">Localisation — Kénitra</div>
+    <div id="map-form"></div>
+    <div class="coord-row" id="coordRow" style="display:none">
+      <span class="dot"></span><span id="coordTxt"></span>
+    </div>
+    <p class="hint">Cliquez sur la carte pour indiquer l'emplacement exact du problème</p>
+  </div>
+
+  <div style="padding:0 4px 20px;">
+    <button class="sbtn" onclick="submitForm()">📤 Envoyer la réclamation</button>
+  </div>
+</div>
+
+<!-- PAGE CARTE -->
+<div id="p-map" class="page">
+  <div class="card" style="padding:10px;">
+    <div class="filter-row" id="filterRow">
+      <div class="filter-chip on" data-f="all" onclick="filterMap(this)">Tout</div>
+      <div class="filter-chip" data-f="Route / Nid de poule" onclick="filterMap(this)">🚧 Route</div>
+      <div class="filter-chip" data-f="Éclairage défaillant" onclick="filterMap(this)">💡 Éclairage</div>
+      <div class="filter-chip" data-f="Déchets / Dépôt sauvage" onclick="filterMap(this)">🗑️ Déchets</div>
+      <div class="filter-chip" data-f="Fuite eau / Canalisation" onclick="filterMap(this)">💧 Eau</div>
+      <div class="filter-chip" data-f="Urgent" onclick="filterMap(this)">🔴 Urgent</div>
+    </div>
+    <div id="map-main"></div>
+    <p class="hint" style="margin-top:6px;">Les points rouges = urgent · orange = moyen · vert = faible</p>
+  </div>
+</div>
+
+<!-- PAGE RECLAMATIONS -->
+<div id="p-list" class="page">
+  <div class="stat-grid">
+    <div class="stat-box"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total réclamations</div></div>
+    <div class="stat-box"><div class="stat-num" id="s-urgent">0</div><div class="stat-lbl">Urgentes</div></div>
+  </div>
+  <div id="recList"><div class="empty">Aucune réclamation pour l'instant</div></div>
+</div>
+
+<!-- PAGE NOTIFICATIONS -->
+<div id="p-notif" class="page">
+  <div class="card">
+    <div class="sec-title">Publier une alerte citoyenne</div>
+    <div class="notif-row">
+      <input id="notifInput" placeholder="Ex: coupure d'eau rue Allal ben Abdellah ce soir…">
+      <button class="npub" onclick="addNotif()">Publier</button>
+    </div>
+  </div>
+  <div id="notifList">
+    <div class="nitem"><span class="ni-ico">🔔</span><div><div class="ni-txt">Fermeture du Bd Mohammed VI pour travaux — durée 2 jours</div><div class="ni-date">Commune de Kénitra · Aujourd'hui</div></div></div>
+    <div class="nitem"><span class="ni-ico">💧</span><div><div class="ni-txt">Coupure d'eau prévue Hay Karima — 8h à 14h samedi</div><div class="ni-date">ONEE · Hier</div></div></div>
+    <div class="nitem"><span class="ni-ico">🚧</span><div><div class="ni-txt">Travaux pont Sidi Mohammed — circulation alternée cette semaine</div><div class="ni-date">Commune de Kénitra · Il y a 2 jours</div></div></div>
+    <div class="nitem"><span class="ni-ico">🌳</span><div><div class="ni-txt">Campagne de nettoyage parc municipal dimanche 9h</div><div class="ni-date">Association citoyenne · Il y a 3 jours</div></div></div>
+  </div>
+</div>
+
+<script>
+let mapForm, mapMain, fMarker, reports = [], catSel = '', urgSel = '', mapMainReady = false, allMarkers = [];
+
+// Init carte formulaire
+window.addEventListener('load', function() {
+  mapForm = L.map('map-form').setView([34.261, -6.578], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapForm);
+  mapForm.on('click', function(e) {
+    if (fMarker) mapForm.removeLayer(fMarker);
+    fMarker = L.marker(e.latlng).addTo(mapForm);
+    document.getElementById('coordRow').style.display = 'flex';
+    document.getElementById('coordTxt').textContent = e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+    mapForm._clickLatLng = e.latlng;
+  });
+});
+
+function goPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+  if (id === 'p-map' && !mapMainReady) { initMapMain(); mapMainReady = true; }
+  if (id === 'p-map' && mapMain) setTimeout(() => mapMain.invalidateSize(), 150);
+}
+
+function initMapMain() {
+  mapMain = L.map('map-main').setView([34.261, -6.578], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapMain);
+  renderMapMarkers('all');
+}
+
+function renderMapMarkers(filter) {
+  if (!mapMain) return;
+  allMarkers.forEach(m => mapMain.removeLayer(m));
+  allMarkers = [];
+  reports.filter(r => r.loc && (filter === 'all' || r.type === filter || r.urgence === filter)).forEach(r => {
+    var color = r.urgence === 'Urgent' ? '#ef4444' : r.urgence === 'Moyen' ? '#f59e0b' : '#10b981';
+    var ico = L.divIcon({
+      className: '',
+      html: '<div style="background:' + color + ';width:13px;height:13px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3);"></div>',
+      iconSize: [13, 13]
+    });
+    var m = L.marker([r.loc.lat, r.loc.lng], { icon: ico }).addTo(mapMain)
+      .bindPopup('<strong>' + r.type + '</strong><br>Urgence : ' + r.urgence + '<br>' + (r.quartier ? r.quartier + '<br>' : '') + '<small>' + r.desc + '</small>');
+    allMarkers.push(m);
+  });
+}
+
+function filterMap(el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderMapMarkers(el.dataset.f);
+}
+
+function selCat(el, val) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  catSel = val;
+}
+
+function selUrg(el) {
+  var v = el.dataset.u;
+  document.querySelectorAll('.urg-btn').forEach(b => { b.className = 'urg-btn'; });
+  el.classList.add(v === 'Faible' ? 'u-faible' : v === 'Moyen' ? 'u-moyen' : 'u-urgent');
+  urgSel = v;
+}
+
+function previewPhoto(inp) {
+  var f = inp.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    var p = document.getElementById('preview');
+    p.src = e.target.result;
+    p.style.display = 'block';
+    document.getElementById('photoLabel').textContent = f.name;
+  };
+  r.readAsDataURL(f);
+}
+
+function submitForm() {
+  var prenom = document.getElementById('prenom').value.trim();
+  var nom = document.getElementById('nom').value.trim();
+  var desc = document.getElementById('desc').value.trim();
+  if (!prenom || !nom || !catSel || !urgSel || !desc) {
+    alert('Veuillez remplir les champs obligatoires (*) : prénom, nom, type de problème, urgence et description.');
+    return;
+  }
+  var prev = document.getElementById('preview');
+  var latlng = mapForm._clickLatLng || null;
+  var r = {
+    id: Date.now(),
+    prenom: prenom, nom: nom,
+    cin: document.getElementById('cin').value,
+    tel: document.getElementById('tel').value,
+    email: document.getElementById('email').value,
+    quartier: document.getElementById('quartier').value,
+    precision: document.getElementById('precision').value,
+    type: catSel, urgence: urgSel, desc: desc,
+    img: prev.style.display === 'block' ? prev.src : null,
+    loc: latlng ? { lat: latlng.lat, lng: latlng.lng } : null,
+    votes: 0, voted: false,
+    date: new Date().toLocaleDateString('fr-FR'),
+    statut: 'En attente'
+  };
+  reports.unshift(r);
+  updateStats();
+  renderList();
+  renderMapMarkers('all');
+  document.getElementById('totalBadge').textContent = reports.length;
+
+  // Reset
+  ['prenom','nom','cin','tel','email','quartier','precision','desc'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('photoLabel').textContent = 'Appuyez pour ajouter une photo';
+  document.getElementById('photo').value = '';
+  document.getElementById('coordRow').style.display = 'none';
+  if (fMarker) { mapForm.removeLayer(fMarker); fMarker = null; }
+  mapForm._clickLatLng = null;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('.urg-btn').forEach(b => { b.className = 'urg-btn'; });
+  catSel = ''; urgSel = '';
+
+  goPage('p-list', document.querySelectorAll('.nav-btn')[2]);
+}
+
+function updateStats() {
+  document.getElementById('s-total').textContent = reports.length;
+  document.getElementById('s-urgent').textContent = reports.filter(r => r.urgence === 'Urgent').length;
+}
+
+function renderList() {
+  var el = document.getElementById('recList');
+  if (!reports.length) { el.innerHTML = '<div class="empty">Aucune réclamation pour l\'instant</div>'; return; }
+  el.innerHTML = reports.map(function(r) {
+    return '<div class="rec-card">' +
+      '<div class="rec-head"><span class="rec-type">' + r.type + '</span>' +
+      '<span class="upill ' + (r.urgence==='Faible'?'pf':r.urgence==='Moyen'?'pm':'pu') + '">' + r.urgence + '</span></div>' +
+      '<div class="rec-loc">📍 ' + (r.quartier || r.precision || (r.loc ? r.loc.lat.toFixed(3)+', '+r.loc.lng.toFixed(3) : 'Non localisé')) + ' · ' + r.date + '</div>' +
+      (r.precision ? '<div class="rec-loc">' + r.precision + '</div>' : '') +
+      '<div class="rec-desc">' + r.desc + '</div>' +
+      (r.img ? '<img class="rec-img" src="'+r.img+'" alt="photo">' : '') +
+      '<div class="rec-foot"><div><span class="rec-user">' + r.prenom + ' ' + r.nom + '</span><br><span class="status-badge">' + r.statut + '</span></div>' +
+      '<button class="vote-b ' + (r.voted?'vd':'') + '" onclick="vote(' + r.id + ')">👍 <span>' + r.votes + '</span></button></div>' +
+      '</div>';
+  }).join('');
+}
+
+function vote(id) {
+  var r = reports.find(function(x){ return x.id===id; });
+  if (!r) return;
+  r.voted = !r.voted;
+  r.votes += r.voted ? 1 : -1;
+  renderList();
+}
+
+function addNotif() {
+  var inp = document.getElementById('notifInput');
+  if (!inp.value.trim()) return;
+  var d = document.createElement('div');
+  d.className = 'nitem';
+  d.innerHTML = '<span class="ni-ico">🔔</span><div><div class="ni-txt">' + inp.value.trim() + '</div><div class="ni-date">Vous · Maintenant</div></div>';
+  document.getElementById('notifList').prepend(d);
+  inp.value = '';
+}
+</script>
+
+</body>
+</html>
