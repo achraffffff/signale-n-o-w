@@ -240,6 +240,23 @@ textarea{height:70px;resize:none;}
 /* ── EMPTY ── */
 .empty{text-align:center;padding:28px 0;color:var(--text3);font-size:13px;line-height:1.8;}
  
+/* ── ADMIN CARD ── */
+.adm-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:13px;margin-bottom:10px;transition:border-color .2s;}
+.adm-card:hover{border-color:var(--border2);}
+.adm-card.urg-urgent{border-left:3px solid var(--red);}
+.adm-card.urg-moyen{border-left:3px solid var(--amber);}
+.adm-card.urg-faible{border-left:3px solid var(--green);}
+.adm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.adm-type{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text);}
+.adm-meta{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.6;}
+.adm-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid var(--border);}
+.adm-sel{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none;}
+.adm-sel:focus{border-color:var(--accent);}
+.adm-del{padding:6px 12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#fca5a5;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:background .15s;}
+.adm-del:hover{background:rgba(239,68,68,.18);}
+.adm-save{padding:6px 12px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent2);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;transition:background .15s;}
+.adm-save:hover{background:rgba(59,130,246,.22);}
+ 
 /* ── ANIMATIONS ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 .rec-card{animation:fadeUp .25s ease both;}
@@ -297,6 +314,7 @@ textarea{height:70px;resize:none;}
   <div class="nav-btn" onclick="goPage('p-list',this)">📋 Réclamations</div>
   <div class="nav-btn" onclick="goPage('p-stats',this)">📊 Statistiques</div>
   <div class="nav-btn" onclick="goPage('p-notif',this)">🔔 Alertes</div>
+  <div class="nav-btn" onclick="openAdminLogin(this)" id="adminNavBtn">🔐 Admin</div>
 </div>
  
 <!-- PAGE FORMULAIRE -->
@@ -456,6 +474,65 @@ textarea{height:70px;resize:none;}
     <div class="nitem"><span class="ni-ico">💧</span><div><div class="ni-txt">Coupure d'eau prévue Hay Karima — 8h à 14h samedi</div><div class="ni-date">ONEE · Hier</div></div></div>
     <div class="nitem"><span class="ni-ico">🚧</span><div><div class="ni-txt">Travaux pont Sidi Mohammed — circulation alternée cette semaine</div><div class="ni-date">Commune de Kénitra · Il y a 2 jours</div></div></div>
     <div class="nitem"><span class="ni-ico">🌳</span><div><div class="ni-txt">Campagne de nettoyage parc municipal dimanche 9h</div><div class="ni-date">Association citoyenne · Il y a 3 jours</div></div></div>
+  </div>
+</div>
+ 
+<!-- PAGE ADMIN -->
+<div id="p-admin" class="page">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text)">🔐 Panneau Administrateur</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px">Gestion complète de toutes les réclamations</div>
+    </div>
+    <button onclick="adminLogout()" style="padding:7px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">🚪 Quitter admin</button>
+  </div>
+ 
+  <!-- Stats rapides admin -->
+  <div class="stat-grid" style="margin-bottom:14px">
+    <div class="stat-box" style="border-color:rgba(239,68,68,.3)"><div class="stat-num" id="adm-total" style="color:var(--red)">0</div><div class="stat-lbl">Total réclamations</div></div>
+    <div class="stat-box" style="border-color:rgba(245,158,11,.3)"><div class="stat-num" id="adm-attente" style="color:var(--amber)">0</div><div class="stat-lbl">En attente</div></div>
+    <div class="stat-box" style="border-color:rgba(59,130,246,.3)"><div class="stat-num" id="adm-cours" style="color:var(--accent2)">0</div><div class="stat-lbl">En cours</div></div>
+    <div class="stat-box" style="border-color:rgba(16,185,129,.3)"><div class="stat-num" id="adm-resolu" style="color:var(--green)">0</div><div class="stat-lbl">Résolues</div></div>
+  </div>
+ 
+  <!-- Actions groupées -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="sec-title">Actions groupées</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+      <button onclick="adminBulkStatus('En cours')" style="padding:8px 14px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent2);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">🔵 Tout marquer En cours</button>
+      <button onclick="adminBulkStatus('Résolu')" style="padding:8px 14px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">✅ Tout marquer Résolu</button>
+      <button onclick="adminDeleteResolved()" style="padding:8px 14px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);color:#fca5a5;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600">🗑️ Supprimer les résolues</button>
+    </div>
+  </div>
+ 
+  <!-- Recherche admin -->
+  <div class="search-wrap" style="margin-bottom:10px">
+    <input id="adminSearch" placeholder="Rechercher par nom, quartier, type, numéro…" oninput="renderAdminList()">
+  </div>
+ 
+  <!-- Filtre statut admin -->
+  <div class="filter-row" id="adminFilters" style="margin-bottom:12px">
+    <div class="filter-chip on" data-af="all" onclick="setAdminFilter(this)">Tout</div>
+    <div class="filter-chip" data-af="En attente" onclick="setAdminFilter(this)">⏳ En attente</div>
+    <div class="filter-chip" data-af="En cours" onclick="setAdminFilter(this)">🔵 En cours</div>
+    <div class="filter-chip" data-af="Résolu" onclick="setAdminFilter(this)">✅ Résolu</div>
+    <div class="filter-chip" data-af="Urgent" onclick="setAdminFilter(this)">🔴 Urgent</div>
+  </div>
+ 
+  <div id="adminList"><div class="empty">Chargement…</div></div>
+</div>
+ 
+<!-- Admin Login Modal -->
+<div class="modal-wrap" id="adminLoginModal">
+  <div class="modal-sheet" style="max-width:360px;margin:0 auto">
+    <button class="modal-close" onclick="closeAdminLogin()">✕</button>
+    <div class="modal-title">🔐 Accès Administrateur</div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px">Entrez le mot de passe administrateur pour accéder au panneau de gestion.</div>
+    <label>Mot de passe</label>
+    <input type="password" id="adminPwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAdminPwd()">
+    <div style="font-size:11px;color:var(--red);margin-top:6px;min-height:16px" id="adminPwdErr"></div>
+    <button class="sbtn" onclick="checkAdminPwd()" style="margin-top:10px">Connexion Admin</button>
+    <div style="font-size:11px;color:var(--text3);margin-top:10px;text-align:center">Mot de passe par défaut : <strong style="color:var(--accent2)">kenitra2025</strong></div>
   </div>
 </div>
  
@@ -621,6 +698,7 @@ window.addEventListener('load',function(){
     var data=snap.val(); reports=[];
     if(data) Object.keys(data).forEach(function(k){reports.push(data[k]);});
     renderList(); updateStats(); updateStatsPage();
+    if(document.getElementById('p-admin').classList.contains('active')) renderAdminList();
     var fc=document.querySelector('#p-map .filter-chip.on');
     renderMapMarkers(fc?fc.dataset.f:'all');
     document.getElementById('totalBadge').textContent=reports.length;
@@ -1013,6 +1091,147 @@ function renderList(){
  
 function esc(s){if(!s) return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function openImg(src){document.getElementById('imgModalSrc').src=src;document.getElementById('imgModal').classList.add('open');}
+ 
+/* ═══════════════════════════════════
+   ADMIN
+═══════════════════════════════════ */
+var ADMIN_PWD='kenitra2025';
+var adminFilter='all';
+var adminNavEl=null;
+ 
+function openAdminLogin(navEl){
+  adminNavEl=navEl;
+  document.getElementById('adminPwdInput').value='';
+  document.getElementById('adminPwdErr').textContent='';
+  document.getElementById('adminLoginModal').classList.add('open');
+  setTimeout(function(){document.getElementById('adminPwdInput').focus();},200);
+}
+ 
+function closeAdminLogin(){
+  document.getElementById('adminLoginModal').classList.remove('open');
+}
+ 
+function checkAdminPwd(){
+  var pwd=document.getElementById('adminPwdInput').value;
+  if(pwd===ADMIN_PWD){
+    closeAdminLogin();
+    goPage('p-admin',adminNavEl||document.getElementById('adminNavBtn'));
+    renderAdminList();
+    updateAdminStats();
+  } else {
+    document.getElementById('adminPwdErr').textContent='Mot de passe incorrect. Réessayez.';
+    document.getElementById('adminPwdInput').value='';
+    document.getElementById('adminPwdInput').focus();
+  }
+}
+ 
+function adminLogout(){
+  goPage('p-list',document.querySelectorAll('.nav-btn')[2]);
+}
+ 
+function setAdminFilter(el){
+  document.querySelectorAll('#adminFilters .filter-chip').forEach(function(c){c.classList.remove('on');});
+  el.classList.add('on'); adminFilter=el.dataset.af; renderAdminList();
+}
+ 
+function updateAdminStats(){
+  document.getElementById('adm-total').textContent=reports.length;
+  document.getElementById('adm-attente').textContent=reports.filter(function(r){return r.statut==='En attente';}).length;
+  document.getElementById('adm-cours').textContent=reports.filter(function(r){return r.statut==='En cours';}).length;
+  document.getElementById('adm-resolu').textContent=reports.filter(function(r){return r.statut==='Résolu';}).length;
+}
+ 
+function adminBulkStatus(statut){
+  var label=statut==='Résolu'?'résolues':'en cours';
+  if(!confirm('Marquer TOUTES les réclamations comme "'+statut+'" ?')) return;
+  var upd={};
+  reports.forEach(function(r){upd['reports/'+r.id+'/statut']=statut;});
+  db.ref().update(upd);
+}
+ 
+function adminDeleteResolved(){
+  var resolved=reports.filter(function(r){return r.statut==='Résolu';});
+  if(!resolved.length){alert('Aucune réclamation résolue à supprimer.');return;}
+  if(!confirm('Supprimer définitivement les '+resolved.length+' réclamation(s) résolue(s) ?')) return;
+  var upd={};
+  resolved.forEach(function(r){upd['reports/'+r.id]=null;});
+  db.ref().update(upd);
+}
+ 
+function adminSetStatus(id,val){
+  db.ref('reports/'+id+'/statut').set(val);
+}
+ 
+function adminDelete(id){
+  if(!confirm('Supprimer définitivement cette réclamation ?')) return;
+  db.ref('reports/'+id).remove();
+}
+ 
+function adminSaveDesc(id){
+  var ta=document.getElementById('adm-desc-'+id);
+  if(!ta||!ta.value.trim()) return;
+  db.ref('reports/'+id+'/desc').set(ta.value.trim(),function(){
+    var btn=document.getElementById('adm-savebtn-'+id);
+    if(btn){btn.textContent='✅ Sauvegardé';setTimeout(function(){btn.textContent='💾 Sauvegarder';},2000);}
+  });
+}
+ 
+function renderAdminList(){
+  var el=document.getElementById('adminList');
+  var q=(document.getElementById('adminSearch')||{}).value||'';
+  q=q.toLowerCase();
+  var arr=reports.filter(function(r){
+    if(adminFilter!=='all'&&adminFilter!=='Urgent') return r.statut===adminFilter;
+    if(adminFilter==='Urgent') return r.urgence==='Urgent';
+    return true;
+  }).filter(function(r){
+    if(!q) return true;
+    return (r.type||'').toLowerCase().includes(q)||(r.desc||'').toLowerCase().includes(q)||(r.quartier||'').toLowerCase().includes(q)||(r.prenom||'').toLowerCase().includes(q)||(r.nom||'').toLowerCase().includes(q)||(r.trackId||'').toLowerCase().includes(q);
+  }).sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
+ 
+  updateAdminStats();
+ 
+  if(!arr.length){
+    el.innerHTML='<div class="empty">Aucune réclamation trouvée.</div>';
+    return;
+  }
+ 
+  el.innerHTML=arr.map(function(r){
+    var urgClass=r.urgence==='Urgent'?'urg-urgent':r.urgence==='Moyen'?'urg-moyen':'urg-faible';
+    var trackId=r.trackId||genTrackId(r);
+    return '<div class="adm-card '+urgClass+'">'+
+      '<div class="adm-head">'+
+        '<div>'+
+          '<div class="adm-type">'+esc(r.type)+'</div>'+
+          '<div class="adm-meta">'+
+            '<span class="track-id">'+esc(trackId)+'</span> &nbsp;'+
+            '<span class="upill '+(r.urgence==='Faible'?'pf':r.urgence==='Moyen'?'pm':'pu')+'">'+r.urgence+'</span> &nbsp;'+
+            '<span class="status-badge '+statusClass(r.statut)+'">'+r.statut+'</span><br>'+
+            '👤 '+esc(r.prenom)+' '+esc(r.nom)+
+            (r.tel?' &nbsp;📞 '+esc(r.tel):'')+
+            (r.cin?' &nbsp;🪪 '+esc(r.cin):'')+
+            '<br>📍 '+esc(r.quartier||r.precision||'Non localisé')+
+            (r.precision&&r.quartier?' — '+esc(r.precision):'')+
+            '<br>🕐 '+timeAgo(r.timestamp)+' · 👍 '+(r.votes||0)+' votes'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="margin-bottom:6px">'+
+        '<div style="font-size:11px;color:var(--text3);margin-bottom:4px">Description :</div>'+
+        '<textarea id="adm-desc-'+r.id+'" style="width:100%;height:60px;font-size:12px;padding:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:DM Sans,sans-serif;resize:none;outline:none">'+esc(r.desc)+'</textarea>'+
+      '</div>'+
+      '<div class="adm-actions">'+
+        '<select class="adm-sel" onchange="adminSetStatus(\''+r.id+'\',this.value)">'+
+          '<option value="En attente"'+(r.statut==='En attente'?' selected':'')+'>⏳ En attente</option>'+
+          '<option value="En cours"'+(r.statut==='En cours'?' selected':'')+'>🔵 En cours</option>'+
+          '<option value="Résolu"'+(r.statut==='Résolu'?' selected':'')+'>✅ Résolu</option>'+
+        '</select>'+
+        '<button id="adm-savebtn-'+r.id+'" class="adm-save" onclick="adminSaveDesc(\''+r.id+'\')">💾 Sauvegarder</button>'+
+        '<button class="adm-del" onclick="adminDelete(\''+r.id+'\')">🗑️ Supprimer</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
  
 /* ═══════════════════════════════════
    NOTIFICATIONS
