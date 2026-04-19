@@ -9,8 +9,8 @@ Copy
 <title>Signalement Citoyen — Kénitra</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;}
@@ -101,20 +101,10 @@ textarea{height:65px;resize:none;}
 .ni-date{font-size:10px;color:#94a3b8;margin-top:3px;}
 .empty{text-align:center;padding:24px 0;color:#94a3b8;font-size:13px;}
 .hint{font-size:10px;color:#94a3b8;margin-top:4px;}
-.fb-notice{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#1d4ed8;line-height:1.6;}
-.fb-notice strong{display:block;font-size:12px;margin-bottom:2px;}
 .img-modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:9999;align-items:center;justify-content:center;}
 .img-modal.open{display:flex;}
 .img-modal img{max-width:96%;max-height:90vh;border-radius:8px;}
-.fb-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.65);z-index:9998;align-items:flex-start;justify-content:center;padding-top:40px;}
-.fb-overlay.open{display:flex;}
-.fb-box{background:white;border-radius:16px;padding:20px;width:90%;max-width:380px;}
-.fb-box h3{font-size:15px;margin-bottom:8px;}
-.fb-box p{font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.5;}
-.fb-box textarea{height:100px;font-size:11px;font-family:monospace;}
-.fb-btns{display:flex;gap:8px;margin-top:10px;}
-.fb-btns button:first-child{flex:1;padding:10px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;}
-.fb-btns button:last-child{padding:10px 14px;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;background:#f8fafc;}
+.connected-bar{background:#d1fae5;border:1px solid #6ee7b7;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#065f46;display:none;}
 </style>
 </head>
 <body>
@@ -122,7 +112,7 @@ textarea{height:65px;resize:none;}
 <header>
   <span style="font-size:20px;">🏙️</span>
   <h2>Signalement — Kénitra</h2>
-  <span class="sync-dot" id="syncDot" title="Statut connexion"></span>
+  <span class="sync-dot" id="syncDot"></span>
   <span class="hbadge" id="totalBadge">0</span>
 </header>
  
@@ -136,10 +126,8 @@ textarea{height:65px;resize:none;}
 <!-- PAGE FORMULAIRE -->
 <div id="p-form" class="page active">
  
-  <div class="fb-notice" id="fbNotice">
-    <strong>🔥 Base de données partagée</strong>
-    Configurez Firebase pour que TOUS les visiteurs voient et votent sur les mêmes réclamations.
-    <a href="#" onclick="openFbModal();return false;" style="color:#1d4ed8;font-weight:700;">→ Configurer Firebase (gratuit)</a>
+  <div class="connected-bar" id="connectedBar">
+    ✅ Firebase connecté — les réclamations sont partagées avec tous les visiteurs en temps réel !
   </div>
  
   <div class="card">
@@ -227,11 +215,10 @@ textarea{height:65px;resize:none;}
       <div class="filter-chip" data-f="Éclairage défaillant" onclick="filterMap(this)">💡 Éclairage</div>
       <div class="filter-chip" data-f="Déchets / Dépôt sauvage" onclick="filterMap(this)">🗑️ Déchets</div>
       <div class="filter-chip" data-f="Fuite eau / Canalisation" onclick="filterMap(this)">💧 Eau</div>
-      <div class="filter-chip" data-f="Inondation / Eau stagnante" onclick="filterMap(this)">🌊 Inondation</div>
       <div class="filter-chip" data-f="Urgent" onclick="filterMap(this)">🔴 Urgent</div>
     </div>
     <div id="map-main"></div>
-    <p class="hint" style="margin-top:6px;">🔴 Urgent &nbsp;🟠 Moyen &nbsp;🟢 Faible — la taille du point = nombre de votes</p>
+    <p class="hint" style="margin-top:6px;">🔴 Urgent &nbsp;🟠 Moyen &nbsp;🟢 Faible — taille = votes</p>
   </div>
 </div>
  
@@ -243,12 +230,10 @@ textarea{height:65px;resize:none;}
     <div class="stat-box"><div class="stat-num" id="s-votes">0</div><div class="stat-lbl">Votes total</div></div>
     <div class="stat-box"><div class="stat-num" id="s-resolu">0</div><div class="stat-lbl">Résolues</div></div>
   </div>
- 
   <div class="top-bar" id="topBar">
     <strong>🏆 Problème le plus signalé</strong>
     <span id="topProblem"></span>
   </div>
- 
   <div class="sort-bar">
     <span>Trier :</span>
     <div class="sort-btn on" data-s="score" onclick="setSort(this)">🔥 Score</div>
@@ -256,8 +241,7 @@ textarea{height:65px;resize:none;}
     <div class="sort-btn" data-s="date" onclick="setSort(this)">🕐 Récent</div>
     <div class="sort-btn" data-s="urgence" onclick="setSort(this)">🚨 Urgence</div>
   </div>
- 
-  <div id="recList"><div class="empty">Chargement…</div></div>
+  <div id="recList"><div class="empty">Chargement des réclamations…</div></div>
 </div>
  
 <!-- PAGE ALERTES -->
@@ -277,98 +261,67 @@ textarea{height:65px;resize:none;}
   </div>
 </div>
  
-<!-- Modals -->
+<!-- Image Modal -->
 <div class="img-modal" id="imgModal" onclick="this.classList.remove('open')">
   <img id="imgModalSrc" src="" alt="Photo agrandie">
 </div>
  
-<div class="fb-overlay" id="fbOverlay">
-  <div class="fb-box">
-    <h3>🔥 Configurer Firebase</h3>
-    <p>
-      1. Allez sur <a href="https://console.firebase.google.com" target="_blank" style="color:#3b82f6;font-weight:700;">console.firebase.google.com</a><br>
-      2. Créez un projet gratuit<br>
-      3. Activez <strong>Realtime Database</strong><br>
-      4. Allez dans Paramètres du projet → Copiez la config web<br>
-      5. Collez-la ci-dessous :
-    </p>
-    <textarea id="fbConfigInput" placeholder='{
-  "apiKey": "...",
-  "authDomain": "...",
-  "databaseURL": "https://votre-projet.firebaseio.com",
-  "projectId": "..."
-}'></textarea>
-    <div class="fb-btns">
-      <button onclick="saveFirebaseConfig()">Connecter et sauvegarder</button>
-      <button onclick="closeFbModal()">Annuler</button>
-    </div>
-    <p style="font-size:10px;color:#94a3b8;margin-top:8px;">Sans Firebase, les réclamations sont visibles uniquement sur votre appareil.</p>
-  </div>
-</div>
- 
 <script>
+// ═══════════════════════════════════
+// FIREBASE — CONFIG INTÉGRÉE
+// ═══════════════════════════════════
+var firebaseConfig = {
+  apiKey: "AIzaSyBZGrz1nzJPz7pj9PueXKpw91nd1tsC8-o",
+  authDomain: "report-n-o-w.firebaseapp.com",
+  databaseURL: "https://report-n-o-w-default-rtdb.firebaseio.com",
+  projectId: "report-n-o-w",
+  storageBucket: "report-n-o-w.firebasestorage.app",
+  messagingSenderId: "333296214191",
+  appId: "1:333296214191:web:464b8eca1fe228d96a745a"
+};
+ 
+firebase.initializeApp(firebaseConfig);
+var db = firebase.database();
+ 
+// ═══════════════════════════════════
+// ÉTAT GLOBAL
+// ═══════════════════════════════════
 var mapForm, mapMain, fMarker, mapMainReady=false, allMarkers=[];
 var reports=[], catSel='', urgSel='', sortMode='score';
-var db=null, fbConnected=false;
-var visitorId = (function(){
+var visitorId=(function(){
   var id=localStorage.getItem('kenitra_vid');
   if(!id){id='v'+Date.now()+'_'+Math.random().toString(36).substr(2,8);localStorage.setItem('kenitra_vid',id);}
   return id;
 })();
  
-// ── FIREBASE ──────────────────────────────────
-function openFbModal(){
-  var s=localStorage.getItem('kenitra_fbcfg');
-  if(s) document.getElementById('fbConfigInput').value=s;
-  document.getElementById('fbOverlay').classList.add('open');
-}
-function closeFbModal(){ document.getElementById('fbOverlay').classList.remove('open'); }
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+window.addEventListener('load', function(){
+  // Connexion Firebase
+  db.ref('.info/connected').on('value', function(snap){
+    if(snap.val()){
+      document.getElementById('syncDot').classList.add('on');
+      document.getElementById('connectedBar').style.display='block';
+    } else {
+      document.getElementById('syncDot').classList.remove('on');
+      document.getElementById('connectedBar').style.display='none';
+    }
+  });
  
-function saveFirebaseConfig(){
-  var raw=document.getElementById('fbConfigInput').value.trim();
-  try{
-    var cfg=JSON.parse(raw);
-    if(!cfg.databaseURL){alert('Il manque "databaseURL" dans la config.');return;}
-    localStorage.setItem('kenitra_fbcfg',raw);
-    initFirebase(cfg);
-    closeFbModal();
-  }catch(e){alert('JSON invalide. Copiez exactement la config depuis Firebase.');}
-}
- 
-function initFirebase(cfg){
-  try{
-    if(!firebase.apps.length) firebase.initializeApp(cfg);
-    db=firebase.database();
-    fbConnected=true;
-    document.getElementById('syncDot').classList.add('on');
-    document.getElementById('fbNotice').style.display='none';
-    listenReports();
-  }catch(e){console.error(e);}
-}
- 
-function listenReports(){
-  if(!db) return;
-  db.ref('reports').on('value',function(snap){
+  // Écouter les réclamations en temps réel
+  db.ref('reports').on('value', function(snap){
     var data=snap.val();
     reports=[];
-    if(data) Object.keys(data).forEach(function(k){reports.push(data[k]);});
-    renderList(); updateStats();
+    if(data) Object.keys(data).forEach(function(k){ reports.push(data[k]); });
+    renderList();
+    updateStats();
     var fc=document.querySelector('.filter-chip.on');
-    renderMapMarkers(fc?fc.dataset.f:'all');
+    renderMapMarkers(fc ? fc.dataset.f : 'all');
     document.getElementById('totalBadge').textContent=reports.length;
   });
-}
  
-// ── INIT ──────────────────────────────────────
-window.addEventListener('load',function(){
-  var saved=localStorage.getItem('kenitra_fbcfg');
-  if(saved){try{initFirebase(JSON.parse(saved));}catch(e){}}
-  else{
-    var local=localStorage.getItem('kenitra_local');
-    if(local){try{reports=JSON.parse(local);}catch(e){reports=[];}}
-    renderList(); updateStats();
-    document.getElementById('totalBadge').textContent=reports.length;
-  }
+  // Carte formulaire
   mapForm=L.map('map-form').setView([34.261,-6.578],13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapForm);
   mapForm.on('click',function(e){
@@ -380,7 +333,9 @@ window.addEventListener('load',function(){
   });
 });
  
-// ── NAVIGATION ───────────────────────────────
+// ═══════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════
 function goPage(id,el){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active');});
@@ -390,7 +345,9 @@ function goPage(id,el){
   if(id==='p-map'&&mapMain) setTimeout(function(){mapMain.invalidateSize();},150);
 }
  
-// ── CARTE PRINCIPALE ─────────────────────────
+// ═══════════════════════════════════
+// CARTE PRINCIPALE
+// ═══════════════════════════════════
 function initMapMain(){
   mapMain=L.map('map-main').setView([34.261,-6.578],13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(mapMain);
@@ -418,11 +375,14 @@ function filterMap(el){
   renderMapMarkers(el.dataset.f);
 }
  
-// ── FORMULAIRE ───────────────────────────────
+// ═══════════════════════════════════
+// FORMULAIRE
+// ═══════════════════════════════════
 function selCat(el,val){
   document.querySelectorAll('.cat-btn').forEach(function(b){b.classList.remove('sel');});
   el.classList.add('sel'); catSel=val;
 }
+ 
 function selUrg(el){
   var v=el.dataset.u;
   document.querySelectorAll('.urg-btn').forEach(function(b){b.className='urg-btn';});
@@ -437,10 +397,10 @@ function previewPhoto(inp){
     var img=new Image();
     img.onload=function(){
       var c=document.createElement('canvas');
-      var r=Math.min(800/img.width,800/img.height,1);
-      c.width=img.width*r; c.height=img.height*r;
+      var ratio=Math.min(800/img.width,800/img.height,1);
+      c.width=img.width*ratio; c.height=img.height*ratio;
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      var comp=c.toDataURL('image/jpeg',0.72);
+      var comp=c.toDataURL('image/jpeg',0.7);
       var p=document.getElementById('preview');
       p.src=comp; p.style.display='block'; p._c=comp;
       document.getElementById('photoLabel').textContent=f.name;
@@ -463,45 +423,34 @@ function submitForm(){
   var prev=document.getElementById('preview');
   var r={
     id:'r'+Date.now()+'_'+Math.random().toString(36).substr(2,5),
-    prenom:prenom,nom:nom,
+    prenom:prenom, nom:nom,
     cin:document.getElementById('cin').value,
     tel:document.getElementById('tel').value,
     email:document.getElementById('email').value,
     quartier:document.getElementById('quartier').value,
     precision:document.getElementById('precision').value,
-    type:catSel,urgence:urgSel,desc:desc,
+    type:catSel, urgence:urgSel, desc:desc,
     img:(prev.style.display==='block'&&prev._c)?prev._c:null,
     loc:mapForm._ll?{lat:mapForm._ll.lat,lng:mapForm._ll.lng}:null,
-    votes:0,voters:{},comments:{},
+    votes:0, voters:{}, comments:{},
     date:new Date().toLocaleDateString('fr-FR'),
     timestamp:Date.now(),
     statut:'En attente',
     authorId:visitorId
   };
-  if(fbConnected&&db){
-    db.ref('reports/'+r.id).set(r,function(err){
-      btn.disabled=false; btn.textContent='📤 Envoyer la réclamation';
-      if(err){alert('Erreur réseau. Sauvegarde locale.');saveLoc(r);}
-      resetForm();
-      goPage('p-list',document.querySelectorAll('.nav-btn')[2]);
-    });
-  } else {
-    reports.unshift(r); saveLoc(r);
-    renderList(); updateStats();
-    document.getElementById('totalBadge').textContent=reports.length;
-    btn.disabled=false; btn.textContent='📤 Envoyer la réclamation';
-    resetForm();
-    goPage('p-list',document.querySelectorAll('.nav-btn')[2]);
-  }
-}
  
-function saveLoc(r){
-  var ex=[]; try{ex=JSON.parse(localStorage.getItem('kenitra_local')||'[]');}catch(e){}
-  ex.unshift(r); localStorage.setItem('kenitra_local',JSON.stringify(ex));
+  db.ref('reports/'+r.id).set(r, function(err){
+    btn.disabled=false; btn.textContent='📤 Envoyer la réclamation';
+    if(err){ alert('Erreur : '+err.message); return; }
+    resetForm();
+    goPage('p-list', document.querySelectorAll('.nav-btn')[2]);
+  });
 }
  
 function resetForm(){
-  ['prenom','nom','cin','tel','email','quartier','precision','desc'].forEach(function(id){document.getElementById(id).value='';});
+  ['prenom','nom','cin','tel','email','quartier','precision','desc'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
   document.getElementById('preview').style.display='none';
   document.getElementById('photoLabel').textContent='Appuyez pour ajouter une photo';
   document.getElementById('photo').value='';
@@ -514,26 +463,22 @@ function resetForm(){
   var p=document.getElementById('preview'); if(p) p._c=null;
 }
  
-// ── VOTE (1 par visiteur) ────────────────────
+// ═══════════════════════════════════
+// VOTE (1 par visiteur)
+// ═══════════════════════════════════
 function vote(id){
   var r=reports.find(function(x){return x.id===id;}); if(!r) return;
   var voters=r.voters||{};
   var hasVoted=voters[visitorId];
-  if(fbConnected&&db){
-    var upd={};
-    upd['votes']=Math.max(0,(r.votes||0)+(hasVoted?-1:1));
-    upd['voters/'+visitorId]=hasVoted?null:true;
-    db.ref('reports/'+id).update(upd);
-  } else {
-    r.voters=r.voters||{};
-    if(hasVoted){r.votes=Math.max(0,(r.votes||0)-1);delete r.voters[visitorId];}
-    else{r.votes=(r.votes||0)+1;r.voters[visitorId]=true;}
-    localStorage.setItem('kenitra_local',JSON.stringify(reports));
-    renderList(); updateStats();
-  }
+  var upd={};
+  upd['votes']=Math.max(0,(r.votes||0)+(hasVoted?-1:1));
+  upd['voters/'+visitorId]=hasVoted?null:true;
+  db.ref('reports/'+id).update(upd);
 }
  
-// ── COMMENTAIRES ─────────────────────────────
+// ═══════════════════════════════════
+// COMMENTAIRES
+// ═══════════════════════════════════
 function toggleComments(id){
   var list=document.getElementById('cl_'+id);
   var tog=document.getElementById('ct_'+id);
@@ -550,17 +495,14 @@ function submitComment(id){
   var text=inp?inp.value.trim():''; if(!text) return;
   var author=ni?ni.value.trim()||'Anonyme':'Anonyme';
   var c={id:'c'+Date.now(),author:author,text:text,date:new Date().toLocaleDateString('fr-FR'),timestamp:Date.now()};
-  if(fbConnected&&db){
-    db.ref('reports/'+id+'/comments/'+c.id).set(c);
-    inp.value='';
-  } else {
-    var r=reports.find(function(x){return x.id===id;});
-    if(r){r.comments=r.comments||{};r.comments[c.id]=c;localStorage.setItem('kenitra_local',JSON.stringify(reports));renderList();}
-  }
+  db.ref('reports/'+id+'/comments/'+c.id).set(c);
+  inp.value='';
 }
  
-// ── SCORE COMBINÉ ────────────────────────────
-function score(r){
+// ═══════════════════════════════════
+// SCORE COMBINÉ
+// ═══════════════════════════════════
+function calcScore(r){
   var u=r.urgence==='Urgent'?30:r.urgence==='Moyen'?15:5;
   var v=(r.votes||0)*10;
   var age=Math.max(0,20-(Date.now()-(r.timestamp||0))/3600000*0.5);
@@ -568,7 +510,9 @@ function score(r){
   return u+v+age+c;
 }
  
-// ── TRI ──────────────────────────────────────
+// ═══════════════════════════════════
+// TRI
+// ═══════════════════════════════════
 function setSort(el){
   document.querySelectorAll('.sort-btn').forEach(function(b){b.classList.remove('on');});
   el.classList.add('on'); sortMode=el.dataset.s; renderList();
@@ -576,14 +520,19 @@ function setSort(el){
  
 function getSorted(){
   var arr=reports.slice();
-  if(sortMode==='score') arr.sort(function(a,b){return score(b)-score(a);});
+  if(sortMode==='score') arr.sort(function(a,b){return calcScore(b)-calcScore(a);});
   else if(sortMode==='votes') arr.sort(function(a,b){return (b.votes||0)-(a.votes||0);});
   else if(sortMode==='date') arr.sort(function(a,b){return (b.timestamp||0)-(a.timestamp||0);});
-  else if(sortMode==='urgence'){var o={Urgent:3,Moyen:2,Faible:1};arr.sort(function(a,b){return (o[b.urgence]||0)-(o[a.urgence]||0);});}
+  else if(sortMode==='urgence'){
+    var o={Urgent:3,Moyen:2,Faible:1};
+    arr.sort(function(a,b){return (o[b.urgence]||0)-(o[a.urgence]||0);});
+  }
   return arr;
 }
  
-// ── STATS ────────────────────────────────────
+// ═══════════════════════════════════
+// STATS
+// ═══════════════════════════════════
 function updateStats(){
   document.getElementById('s-total').textContent=reports.length;
   document.getElementById('s-urgent').textContent=reports.filter(function(r){return r.urgence==='Urgent';}).length;
@@ -598,21 +547,25 @@ function updateStats(){
   }
 }
  
-// ── RENDU LISTE ──────────────────────────────
+// ═══════════════════════════════════
+// RENDU LISTE
+// ═══════════════════════════════════
 function renderList(){
   var el=document.getElementById('recList');
   var sorted=getSorted();
-  if(!sorted.length){el.innerHTML='<div class="empty">Aucune réclamation pour l\'instant.<br>Soyez le premier à signaler un problème !</div>';return;}
+  if(!sorted.length){
+    el.innerHTML='<div class="empty">Aucune réclamation pour l\'instant.<br>Soyez le premier à signaler un problème !</div>';
+    return;
+  }
   el.innerHTML=sorted.map(function(r,idx){
     var voters=r.voters||{};
     var iVoted=voters[visitorId];
-    var sc=Math.round(score(r));
+    var sc=Math.round(calcScore(r));
     var cmts=r.comments?Object.values(r.comments):[];
     cmts.sort(function(a,b){return (a.timestamp||0)-(b.timestamp||0);});
     var isTop=idx===0&&(sortMode==='score'||sortMode==='votes');
- 
     return '<div class="rec-card'+(isTop?' top1':'')+'">'+
-      (isTop?'<div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:700;">🔥 Problème prioritaire — le plus signalé</div>':'')+
+      (isTop?'<div style="font-size:11px;color:#92400e;margin-bottom:6px;font-weight:700;">🔥 Problème prioritaire</div>':'')+
       '<div class="rec-head">'+
         '<span class="rec-type">'+esc(r.type)+'</span>'+
         '<div style="display:flex;gap:4px;align-items:center;">'+
@@ -631,12 +584,16 @@ function renderList(){
         '</button>'+
       '</div>'+
       '<div class="comments-section">'+
-        '<div class="comments-toggle" id="ct_'+r.id+'" onclick="toggleComments(\''+r.id+'\')">💬 '+(cmts.length>0?cmts.length+' commentaire'+(cmts.length>1?'s':''):'Ajouter un commentaire')+'</div>'+
+        '<div class="comments-toggle" id="ct_'+r.id+'" onclick="toggleComments(\''+r.id+'\')">💬 '+
+          (cmts.length>0?cmts.length+' commentaire'+(cmts.length>1?'s':''):'Ajouter un commentaire')+
+        '</div>'+
         '<div class="comments-list" id="cl_'+r.id+'">'+
           cmts.map(function(c){
-            return '<div class="comment-item"><div class="comment-author">'+esc(c.author)+'</div>'+
+            return '<div class="comment-item">'+
+              '<div class="comment-author">'+esc(c.author)+'</div>'+
               '<div class="comment-text">'+esc(c.text)+'</div>'+
-              '<div class="comment-date">'+c.date+'</div></div>';
+              '<div class="comment-date">'+c.date+'</div>'+
+            '</div>';
           }).join('')+
           '<div class="comment-form">'+
             '<input id="cn_'+r.id+'" placeholder="Prénom" style="width:80px;flex:0 0 80px;">'+
@@ -659,7 +616,9 @@ function openImg(src){
   document.getElementById('imgModal').classList.add('open');
 }
  
-// ── NOTIFICATIONS ────────────────────────────
+// ═══════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════
 function addNotif(){
   var inp=document.getElementById('notifInput');
   if(!inp.value.trim()) return;
@@ -671,3 +630,4 @@ function addNotif(){
 </script>
 </body>
 </html>
+ 
