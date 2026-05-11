@@ -1242,9 +1242,9 @@ function addNotif(){
   var author=currentUser&&!currentUser.isAnon?(currentUser.prenom+' '+currentUser.nom):'Citoyen';
   var d=document.createElement('div'); d.className='nitem';
   d.innerHTML='<span class="ni-ico">🔔</span><div><div class="ni-txt">'+esc(inp.value.trim())+'</div><div class="ni-date">'+author+' · Maintenant</div></div>';
-  document.getElementById('notifList').prepend(d);
+  document.getElementById('notifList').prepend(d) ;
   inp.value='';
-}
+  }
 </script>
 </body>
 </html>
